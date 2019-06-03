@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Animation
@@ -129,7 +124,6 @@ namespace Animation
         {
             if (imgListIndex != -1)
             {
-                
                 imgListIndex = (imgListIndex + 1) % bmpList.Images.Count;
                 bmp = new Bitmap(bmpList.Images[imgListIndex]);
                 bmp.MakeTransparent(bmp.GetPixel(1, 1));

@@ -75,10 +75,11 @@
             this.sprite1.Filename = null;
             this.sprite1.Flip = false;
             this.sprite1.ImageIndex = 0;
-            this.sprite1.Location = new System.Drawing.Point(215, 88);
+            this.sprite1.Location = new System.Drawing.Point(261, 88);
             this.sprite1.Name = "sprite1";
             this.sprite1.Size = new System.Drawing.Size(256, 256);
             this.sprite1.TabIndex = 0;
+            this.sprite1.Visible = false;
             // 
             // sound1
             // 

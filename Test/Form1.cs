@@ -5,7 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Test
@@ -27,7 +27,7 @@ namespace Test
             for (int i = 0; i < 63; i++)
             {
                 sprite1.NextFrame();
-                System.Threading.Thread.Sleep(200);
+                Thread.Sleep(200);
             }
             sound1.Stop();
         }
