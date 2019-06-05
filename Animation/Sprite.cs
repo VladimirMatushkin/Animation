@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace Animation
 {
@@ -17,6 +18,8 @@ namespace Animation
         bool flip = false;
         public int bmpX = 0;
         public int bmpY = 0;
+
+        List<Bitmap> cache;
 
         public Sprite()
         {
@@ -63,11 +66,15 @@ namespace Animation
             get { return flip; }
             set
             {
-                flip = value;
                 if (bmp != null)
                 {
-                    MakeDrawBmp();
-                    RefreshScene();
+                    if (flip != value)
+                    {
+                        bmp.RotateFlip(RotateFlipType.RotateNoneFlipX);
+                        MakeDrawBmp();
+                        RefreshScene();
+                    }
+                    flip = value;
                 }
             }
         }
@@ -97,7 +104,16 @@ namespace Animation
             get { return bmpList; }
             set
             {
-                bmpList = value;
+                if(value != null)
+                {
+                    bmpList = value;
+                    cache = new List<Bitmap>(value.Images.Count);
+                    for (int i = 0; i < value.Images.Count; i++)
+                    {
+                        cache.Add(new Bitmap(value.Images[i]));
+                        cache[i].MakeTransparent(cache[i].GetPixel(1, 1));
+                    }
+                }
             }
         }
 
@@ -109,10 +125,11 @@ namespace Animation
                 if(bmpList!= null && value >=0 && value < bmpList.Images.Count)
                 {
                     imgListIndex = value;
-                    bmp = new Bitmap(bmpList.Images[imgListIndex]);
+                    //bmp = new Bitmap(bmpList.Images[imgListIndex]);
+                    bmp = cache[imgListIndex];
                     if (bmp != null)
                     {
-                        bmp.MakeTransparent(bmp.GetPixel(1, 1));
+                        //bmp.MakeTransparent(bmp.GetPixel(1, 1));
                         MakeDrawBmp();
                         RefreshScene();
                     }
@@ -125,56 +142,62 @@ namespace Animation
             if (imgListIndex != -1)
             {
                 imgListIndex = (imgListIndex + 1) % bmpList.Images.Count;
-                bmp = new Bitmap(bmpList.Images[imgListIndex]);
-                bmp.MakeTransparent(bmp.GetPixel(1, 1));
+                //bmp = new Bitmap(bmpList.Images[imgListIndex]);
+                //bmp.MakeTransparent(bmp.GetPixel(1, 1));
+                bmp = cache[imgListIndex];
                 MakeDrawBmp();
                 RefreshScene();
             }
         }
 
-        /*
-        private Bitmap rotateImage(Bitmap b, float angle)
-        {
-            int maxside = (int)(Math.Sqrt(b.Width * b.Width + b.Height * b.Height));
-            //create a new empty bitmap to hold rotated image
-            Bitmap returnBitmap = new Bitmap(maxside, maxside);
-            //make a graphics object from the empty bitmap
-            Graphics g = Graphics.FromImage(returnBitmap);
-            //move rotation point to center of image
-            g.TranslateTransform((float)b.Width / 2, (float)b.Height / 2);
-            //rotate
-            g.RotateTransform(angle);
-            //move image back
-            g.TranslateTransform(-(float)b.Width / 2, -(float)b.Height / 2);
-            //draw passed in image onto graphics object
-            g.DrawImage(b, new Point(0, 0));
-            return returnBitmap;
-        }
-         */
-
         private void MakeDrawBmp()
         {
-            if (drawBmp != null) drawBmp.Dispose(); 
-            double w = this.Width;
-            double h = this.Height;
-            double r = Math.Sqrt(w * w + h * h);
-            //double a1 = Math.Atan2(h, w) - angle / 180.0 * Math.PI;
-            //double a2 = Math.Atan2(h, -w) - angle / 180.0 * Math.PI;
-            //h = Math.Max(Math.Abs(r * Math.Sin(a1)), Math.Abs(r * Math.Sin(a2)));
-            //w = Math.Max(Math.Abs(r * Math.Cos(a1)), Math.Abs(r * Math.Cos(a2)));
+            if (drawBmp != null) drawBmp.Dispose();
 
-            bmpX = this.Left + (this.Width - (int)(w * scale)) / 2;
-            bmpY = this.Top + (this.Height - (int)(h * scale)) / 2;
-            drawBmp = new Bitmap((int)(r * scale), (int)(r * scale));
+            int l = bmp.Width;
+            int h = bmp.Height;
+            double radian = angle * Math.PI / 180;
+            double cos = Math.Abs(Math.Cos(radian));
+            double sin = Math.Abs(Math.Sin(radian));
+            int nl = (int)((l * cos + h * sin) * scale);
+            int nh = (int)((l * sin + h * cos) * scale);
 
+            drawBmp = new Bitmap(nl, nh);
             Graphics g = Graphics.FromImage(drawBmp);
-            g.TranslateTransform((float)drawBmp.Height / 2, (float)drawBmp.Height / 2);
-            g.RotateTransform((float)angle);
-            g.TranslateTransform(-(float)drawBmp.Width / 2, -(float)drawBmp.Height / 2);
-            g.ScaleTransform((float)this.Width * scale / bmp.Width, (float)this.Height * scale / bmp.Height);
+
+            g.TranslateTransform(nl / 2f, nh / 2f);
+            g.ScaleTransform(scale, scale);
+            g.RotateTransform(angle);
+            g.TranslateTransform(-l / 2f, -h / 2f);
 
             g.DrawImage(bmp, 0, 0);
-            if (flip) bmp.RotateFlip(RotateFlipType.Rotate180FlipX);
+
+            bmpX = this.Left + (this.Width - nl) /2;
+            bmpY = this.Top + (this.Height - nh) / 2;
+            //return returnBitmap;
+
+            //if (drawBmp != null) drawBmp.Dispose(); 
+            //double w = this.Width;
+            //double h = this.Height;
+            //double r = Math.Sqrt(w * w + h * h);
+            ////double a1 = Math.Atan2(h, w) - angle / 180.0 * Math.PI;
+            ////double a2 = Math.Atan2(h, -w) - angle / 180.0 * Math.PI;
+            ////h = Math.Max(Math.Abs(r * Math.Sin(a1)), Math.Abs(r * Math.Sin(a2)));
+            ////w = Math.Max(Math.Abs(r * Math.Cos(a1)), Math.Abs(r * Math.Cos(a2)));
+
+            //bmpX = this.Left + (this.Width - (int)(r * scale)) / 2;
+            //bmpY = this.Top + (this.Height - (int)(r * scale)) / 2;
+            //drawBmp = new Bitmap((int)(r * scale), (int)(r * scale));
+
+            //Graphics g = Graphics.FromImage(drawBmp);
+
+            //g.TranslateTransform((float)bmp.Width / 2, (float)bmp.Height / 2);
+            //g.RotateTransform((float)angle);
+            //g.TranslateTransform(-(float)bmp.Width / 2, -(float)bmp.Height / 2);
+            //g.ScaleTransform((float)this.Width * scale / bmp.Width, (float)this.Height * scale / bmp.Height);
+
+            //if (flip) bmp.RotateFlip(RotateFlipType.Rotate180FlipX);
+            //g.DrawImage(bmp, 0, 0);
 
             /*double newWidth = this.Width, newHeight = this.Height;
             double angleRadians = Math.PI / 180.0;
@@ -216,7 +239,7 @@ namespace Animation
             if (this.Parent != null && this.Parent is ScenePanel)
             {
                 (this.Parent as ScenePanel).RefreshScene();
-                this.Parent.Refresh(); //?
+                this.Parent.Refresh(); 
             }
         }
 
@@ -243,13 +266,12 @@ namespace Animation
 
         protected override void OnLocationChanged(EventArgs e)
         {
-            base.OnLocationChanged(e);
+            //base.OnLocationChanged(e);
             if(drawBmp != null) {
                 bmpX = this.Left + (this.Width - drawBmp.Width) / 2;
                 bmpY = this.Top + (this.Height - drawBmp.Height) / 2;
+                RefreshScene();
             }
-            
-            RefreshScene();
         }
     }
 }

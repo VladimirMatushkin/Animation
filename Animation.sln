@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28917.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Animation", "Animation\Animation.csproj", "{0790D51F-CF05-4B47-8AF7-9A8E731AC8EA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{431C9324-919D-4DC6-A8B1-8EF02324D489}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Football", "Football\Football.csproj", "{F22FA1A7-E65D-439A-84EA-566A83F91821}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,8 +23,15 @@ Global
 		{431C9324-919D-4DC6-A8B1-8EF02324D489}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{431C9324-919D-4DC6-A8B1-8EF02324D489}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{431C9324-919D-4DC6-A8B1-8EF02324D489}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F22FA1A7-E65D-439A-84EA-566A83F91821}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F22FA1A7-E65D-439A-84EA-566A83F91821}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F22FA1A7-E65D-439A-84EA-566A83F91821}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F22FA1A7-E65D-439A-84EA-566A83F91821}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {44D5CBAC-A694-4F67-90F8-E9D73C0DE1EB}
 	EndGlobalSection
 EndGlobal

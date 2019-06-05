@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // набора атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
 // связанные со сборкой.
 [assembly: AssemblyTitle("Animation")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Library of components for 2D animation")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("ЮУрГУ")]
 [assembly: AssemblyProduct("Animation")]
-[assembly: AssemblyCopyright("Copyright © ЮУрГУ 2018")]
+[assembly: AssemblyCopyright("Copyright © ЮУрГУ 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
