@@ -5,10 +5,6 @@ namespace Football
 {
     public partial class Form1 : Form
     {
-        private int ballSpeed = 0;
-        private int dx = 0;
-        private int dy = 0;
-
         public Form1()
         {
             InitializeComponent();
@@ -17,41 +13,49 @@ namespace Football
             DoubleBuffered = true;
         }
 
+        private float ballSpeed = 0;
+        private int dx = 0;
+        private int dy = 0;
+
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             switch (e.KeyCode)
             {
                 case Keys.D:
-                    if (sprite2.Left + sprite2.Width + 5 >= sprite1.Left && sprite2.Left + sprite2.Width + 5 <= sprite1.Left + sprite1.Width && sprite2.Top <= sprite1.Top && sprite2.Top + sprite2.Height >= sprite1.Top)
+                    if(sprite2.Intersect(sprite1))
                     {
                         dx = 1;
+                        dy = 0;
+                        ballSpeed = 10;
                     }
                     sprite2.Left += 5;
-                    ballSpeed = 10;
                     break;
                 case Keys.A:
-                    if (sprite2.Left - 5 <= sprite1.Left + sprite1.Width && sprite2.Left + sprite2.Width >= sprite1.Left && sprite2.Top <= sprite1.Top && sprite2.Top + sprite2.Height >= sprite1.Top)
+                    if (sprite2.Intersect(sprite1))
                     {
                         dx = -1;
+                        dy = 0;
+                        ballSpeed = 10;
                     }
                     sprite2.Left -= 5;
-                    ballSpeed = 10;
                     break;
                 case Keys.S:
-                    if (sprite2.Top + sprite2.Height + 5 >= sprite1.Top && sprite2.Top + sprite2.Height + 5 <= sprite1.Top + sprite1.Height && sprite2.Left <= sprite1.Left && sprite2.Left + sprite2.Width >= sprite1.Left)
+                    if (sprite2.Intersect(sprite1))
                     {
                         dy = 1;
+                        dx = 0;
+                        ballSpeed = 10;
                     }
                     sprite2.Top += 5;
-                    ballSpeed = 10;
                     break;
                 case Keys.W:
-                    if (sprite2.Top - 5 <= sprite1.Top + sprite1.Height && sprite2.Top + sprite2.Height >= sprite1.Top && sprite2.Left <= sprite1.Left && sprite2.Left + sprite2.Width >= sprite1.Left)
+                    if (sprite2.Intersect(sprite1))
                     {
                         dy = -1;
+                        dx = 0;
+                        ballSpeed = 10;
                     }
                     sprite2.Top -= 5;
-                    ballSpeed = 10;
                     break;
             }
         }
@@ -60,15 +64,9 @@ namespace Football
         {
             if (ballSpeed > 0)
             {
-                sprite1.Left += dx * ballSpeed;
-                sprite1.Top += dy * ballSpeed;
-                ballSpeed -= 2;
-                if (ballSpeed <= 0)
-                {
-                    ballSpeed = 0;
-                    dx = 0;
-                    dy = 0;
-                }
+                sprite1.Left += (int)(dx * ballSpeed);
+                sprite1.Top += (int)(dy * ballSpeed);
+                ballSpeed -= 0.5F;
             }
         }
     }

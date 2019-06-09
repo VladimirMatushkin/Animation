@@ -2,22 +2,21 @@
 using System.Threading;
 using System.Windows.Forms;
 
-namespace Test
+namespace AnimationTest
 {
     public partial class Form1 : Form
     {
         public Form1()
         {
             InitializeComponent();
-            KeyPreview = true;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void Button1_Click(object sender, EventArgs e)
         {
             sound1.Play();
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < 20; i++)
             {
-                sprite1.NextFrame();
+                sprite1.NextImage();
                 Thread.Sleep(200);
             }
             sound1.Stop();

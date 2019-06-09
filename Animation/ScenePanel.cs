@@ -5,59 +5,70 @@ using System.Windows.Forms;
 
 namespace Animation
 {
+    /// <summary>
+    /// Container for the Sprite components.
+    /// </summary>
     public partial class ScenePanel : Panel
     {
-        string imgFile;
-        Bitmap background;
-        BufferedGraphics graphicsBuffer = null;
-        int width = -1;
-        int height = -1;
-
-        //BufferedGraphicsContext myContext = new BufferedGraphicsContext();
+        private string _sourceFile = null;
+        private Bitmap _backgroundImage = null;
+        private BufferedGraphics _graphicsBuffer = null;
+        private int _width = -1;
+        private int _height = -1;
 
         public ScenePanel()
         {
             InitializeComponent();
         }
 
-        [EditorAttribute(typeof(System.Windows.Forms.Design.FileNameEditor), typeof(System.Drawing.Design.UITypeEditor))]
-        public string Filename
+        /// <summary>
+        /// This property represent a string that holds the path to the source image.
+        /// </summary>
+        [
+            Category("ScenePanel"),
+            Description("Path to the source image of the ScenePanel."),
+            EditorAttribute(typeof(System.Windows.Forms.Design.FileNameEditor), typeof(System.Drawing.Design.UITypeEditor))
+        ]
+        public string SourceFile
         {
-            get { return imgFile; }
+            get { return _sourceFile; }
             set
             {
-                imgFile = value;
-                background = new Bitmap(imgFile);
+                _sourceFile = value;
+                _backgroundImage = new Bitmap(_sourceFile);
                 RefreshScene();
             }
         }
 
+        /// <summary>
+        /// Redraw background and all the sprites that are placed on this component.
+        /// Save result image to buffer that will be used in OnPaint event.
+        /// </summary>
         public void RefreshScene()
         {
-            //if (graphicsBuffer != null) graphicsBuffer.Dispose();
-            //graphicsBuffer = BufferedGraphicsManager.Current.Allocate(this.CreateGraphics(), this.DisplayRectangle);
+            // If the component size has changed - create new buffer.
             Rectangle rectangle = this.DisplayRectangle;
-            if (rectangle.Width != width || rectangle.Height != height)
+            if (rectangle.Width != _width || rectangle.Height != _height)
             {
-                if (graphicsBuffer != null)
-                    graphicsBuffer.Dispose();
-                graphicsBuffer = BufferedGraphicsManager.Current.Allocate(this.CreateGraphics(), rectangle);
-                //graphicsBuffer = myContext.Allocate(this.CreateGraphics(), rectangle);
-                width = rectangle.Width;
-                height = rectangle.Height;
+                if (_graphicsBuffer != null)
+                    _graphicsBuffer.Dispose();
+                _graphicsBuffer = BufferedGraphicsManager.Current.Allocate(this.CreateGraphics(), rectangle);
+                _width = rectangle.Width;
+                _height = rectangle.Height;
             }
-            
-            Graphics g = graphicsBuffer.Graphics;
-            g.DrawImage(background, 0, 0, this.Width, this.Height);
+
+            // Draw background and all the sprites that are placed on this component.
+            Graphics g = _graphicsBuffer.Graphics;
+            g.DrawImage(_backgroundImage, 0, 0, this.Width, this.Height);
             foreach (Control c in this.Controls)
             {
-                if (c is Sprite s && s.Visible == true)
+                if (c is Sprite s)
                 {
-                    Bitmap bmp = s.Bitmap;
+                    Bitmap bmp = s.Image;
                     if (bmp != null)
                     {
                         //g.DrawImage(bmp, s.bmpX, s.bmpY, bmp.Width, bmp.Height);
-                        g.DrawImage(bmp, s.bmpX, s.bmpY);
+                        g.DrawImage(bmp, s.displayedImageLeft, s.displayedImageTop);
                     }
                 }
             }
@@ -65,20 +76,20 @@ namespace Animation
 
         protected override void OnClientSizeChanged(EventArgs e)
         {
-            RefreshScene();
+            if (_backgroundImage != null)
+                RefreshScene();
         }
 
         protected override void OnPaintBackground(PaintEventArgs e)
         {
-            base.OnPaintBackground(e);
+            //base.OnPaintBackground(e);
             //g.Graphics.DrawImage(background, 0, 0, this.Width, this.Height);
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            //MessageBox.Show("Onapa");
-            if (graphicsBuffer != null)
-                graphicsBuffer.Render(e.Graphics);
+            if (_graphicsBuffer != null)
+                _graphicsBuffer.Render(e.Graphics);
         }
     }
 }

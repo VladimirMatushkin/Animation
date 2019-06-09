@@ -1,23 +1,31 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
-using System.Collections.Generic;
 
 namespace Animation
 {
+    /// <summary>
+    /// Sprite - component that provides such manipulations on the image as rotation, scaling, flipping.
+    /// Should be placed on <c>ScenePanel</c> component.
+    /// </summary>
+    [Description("Component that provides different manipulations on the image. Should be placed on ScenePanel component")]
     public partial class Sprite : UserControl
     {
-        string imgFile;
-        ImageList bmpList = null;
-        Bitmap bmp = null;
-        Bitmap drawBmp = null;
-        int imgListIndex = -1;
-        float angle = 0;
-        float scale = 1;
-        bool flip = false;
-        public int bmpX = 0;
-        public int bmpY = 0;
+        public int displayedImageLeft = 0;
+        public int displayedImageTop = 0;
+
+        private string _sourceFile = null;
+        private Bitmap _baseImage = null;
+        private Bitmap _displayedImage = null;
+        private ImageList _imageList = null;
+        private int _imageListIndex;
+        private float _angle = 0.0F;
+        private float _scaleX = 1;
+        private float _scaleY = 1;
+        private bool _flipX = false;
+        private bool _flipY = false;
 
         List<Bitmap> cache;
 
@@ -27,19 +35,28 @@ namespace Animation
             this.BackColor = Color.Transparent;
         }
 
-        [EditorAttribute(typeof(System.Windows.Forms.Design.FileNameEditor), typeof(System.Drawing.Design.UITypeEditor))]
-        public string Filename
+        #region Public Properties
+
+        /// <summary>
+        /// This property represent a string that holds the path to the source image.
+        /// </summary>
+        [
+            Category("Sprite"),
+            Description("Path to the source image of the Sprite."),
+            EditorAttribute(typeof(System.Windows.Forms.Design.FileNameEditor), typeof(System.Drawing.Design.UITypeEditor))
+        ]
+        public string SourceFile
         {
-            get { return imgFile; }
+            get { return _sourceFile; }
             set
             {
                 if (value != null && value.Length > 0)
                 {
-                    imgFile = value;
-                    bmp = new Bitmap(imgFile);
-                    if (bmp != null)
+                    _sourceFile = value;
+                    _baseImage = new Bitmap(_sourceFile);
+                    if (_baseImage != null)
                     {
-                        bmp.MakeTransparent(bmp.GetPixel(1, 1));
+                        _baseImage.MakeTransparent(_baseImage.GetPixel(1, 1));
                         MakeDrawBmp();
                         RefreshScene();
                     }
@@ -47,87 +64,73 @@ namespace Animation
             }
         }
 
-        public float Angle
+        /// <summary>
+        /// Get the displayed image.
+        /// </summary>
+        [
+            Category("Sprite"),
+            Description("Displayed image with applied transformations.")
+        ]
+        public Bitmap Image
         {
-            get { return angle; }
-            set
-            {
-                angle = value;
-                if (bmp != null)
-                {
-                    MakeDrawBmp();
-                    RefreshScene();
-                }
-            }
+            get { return _displayedImage; }
         }
 
-        public bool Flip
-        {
-            get { return flip; }
-            set
-            {
-                if (bmp != null)
-                {
-                    if (flip != value)
-                    {
-                        bmp.RotateFlip(RotateFlipType.RotateNoneFlipX);
-                        MakeDrawBmp();
-                        RefreshScene();
-                    }
-                    flip = value;
-                }
-            }
-        }
-
-        public float BitmapScale
-        {
-            get { return scale; }
-            set
-            {
-                scale = value;
-                if (bmp != null)
-                {
-                    MakeDrawBmp();
-                    RefreshScene();
-                }
-            }
-        }
-
-        public Bitmap Bitmap
-        {
-            get { return drawBmp; }
-        }
-
+        /// <summary>
+        /// ImageList that used to animate sprite.
+        /// </summary>
+        [
+            Category("Sprite"),
+            Description("ImageList that used to animate sprite.")
         //[Editor(typeof(System.ComponentModel.Design.CollectionEditor), typeof(System.Drawing.Design.UITypeEditor))]
-        public ImageList BmpList
+        ]
+        public ImageList ImgList
         {
-            get { return bmpList; }
+            get { return _imageList; }
             set
             {
-                if(value != null)
+                if (value != null)
                 {
-                    bmpList = value;
-                    cache = new List<Bitmap>(value.Images.Count);
-                    for (int i = 0; i < value.Images.Count; i++)
+                    if(value.Images.Count == 0)
                     {
-                        cache.Add(new Bitmap(value.Images[i]));
-                        cache[i].MakeTransparent(cache[i].GetPixel(1, 1));
+                        MessageBox.Show("ImageList is empty");
+                    }
+                    else
+                    {
+                        _imageList = value;
+                        _imageListIndex = 0;
+                        cache = new List<Bitmap>(value.Images.Count);
+                        for (int i = 0; i < value.Images.Count; i++)
+                        {
+                            cache.Add(new Bitmap(value.Images[i]));
+                            cache[i].MakeTransparent(cache[i].GetPixel(1, 1));
+                        }
+                        _baseImage = cache[0];
+                        MakeDrawBmp();
+                        RefreshScene();
                     }
                 }
             }
         }
 
-        public int ImageIndex
+        /// <summary>
+        /// The index of the image in ImageList from which starts the animation.
+        /// </summary>
+        [
+            Category("Sprite"),
+            Description("The index of the image in the ImageList from which starts the animation.")
+        ]
+        public int ImageListIndex
         {
-            get { return imgListIndex; }
+            get { return _imageListIndex; }
             set
             {
-                if(bmpList!= null && value >=0 && value < bmpList.Images.Count)
+                if (_imageList != null && value >= 0 && value < _imageList.Images.Count)
                 {
-                    imgListIndex = value;
+                    _imageListIndex = value;
                     //bmp = new Bitmap(bmpList.Images[imgListIndex]);
-                    bmp = cache[imgListIndex];
-                    if (bmp != null)
+                    _baseImage = cache[_imageListIndex];
+                    if (_baseImage != null)
                     {
                         //bmp.MakeTransparent(bmp.GetPixel(1, 1));
                         MakeDrawBmp();
@@ -137,116 +140,127 @@ namespace Animation
             }
         }
 
-        public void NextFrame()
+        /// <summary>
+        /// Represents the angle of rotation of the sprite. Default value is 0.0. Can be negative.
+        /// </summary>
+        [
+            Category("Sprite"),
+            Description("Angle of sprite rotation.")
+        ]
+        public float Angle
         {
-            if (imgListIndex != -1)
+            get { return _angle; }
+            set
             {
-                imgListIndex = (imgListIndex + 1) % bmpList.Images.Count;
-                //bmp = new Bitmap(bmpList.Images[imgListIndex]);
-                //bmp.MakeTransparent(bmp.GetPixel(1, 1));
-                bmp = cache[imgListIndex];
-                MakeDrawBmp();
-                RefreshScene();
+                _angle = value;
+                if (_baseImage != null)
+                {
+                    MakeDrawBmp();
+                    RefreshScene();
+                }
             }
         }
 
-        private void MakeDrawBmp()
+        /// <summary>
+        /// Set a horizontal flip.
+        /// </summary>
+        [
+            Category("Sprite"),
+            Description("When this property is true, make a horizontal sprite image flip.")
+        ]
+        public bool FlipX
         {
-            if (drawBmp != null) drawBmp.Dispose();
-
-            int l = bmp.Width;
-            int h = bmp.Height;
-            double radian = angle * Math.PI / 180;
-            double cos = Math.Abs(Math.Cos(radian));
-            double sin = Math.Abs(Math.Sin(radian));
-            int nl = (int)((l * cos + h * sin) * scale);
-            int nh = (int)((l * sin + h * cos) * scale);
-
-            drawBmp = new Bitmap(nl, nh);
-            Graphics g = Graphics.FromImage(drawBmp);
-
-            g.TranslateTransform(nl / 2f, nh / 2f);
-            g.ScaleTransform(scale, scale);
-            g.RotateTransform(angle);
-            g.TranslateTransform(-l / 2f, -h / 2f);
-
-            g.DrawImage(bmp, 0, 0);
-
-            bmpX = this.Left + (this.Width - nl) /2;
-            bmpY = this.Top + (this.Height - nh) / 2;
-            //return returnBitmap;
-
-            //if (drawBmp != null) drawBmp.Dispose(); 
-            //double w = this.Width;
-            //double h = this.Height;
-            //double r = Math.Sqrt(w * w + h * h);
-            ////double a1 = Math.Atan2(h, w) - angle / 180.0 * Math.PI;
-            ////double a2 = Math.Atan2(h, -w) - angle / 180.0 * Math.PI;
-            ////h = Math.Max(Math.Abs(r * Math.Sin(a1)), Math.Abs(r * Math.Sin(a2)));
-            ////w = Math.Max(Math.Abs(r * Math.Cos(a1)), Math.Abs(r * Math.Cos(a2)));
-
-            //bmpX = this.Left + (this.Width - (int)(r * scale)) / 2;
-            //bmpY = this.Top + (this.Height - (int)(r * scale)) / 2;
-            //drawBmp = new Bitmap((int)(r * scale), (int)(r * scale));
-
-            //Graphics g = Graphics.FromImage(drawBmp);
-
-            //g.TranslateTransform((float)bmp.Width / 2, (float)bmp.Height / 2);
-            //g.RotateTransform((float)angle);
-            //g.TranslateTransform(-(float)bmp.Width / 2, -(float)bmp.Height / 2);
-            //g.ScaleTransform((float)this.Width * scale / bmp.Width, (float)this.Height * scale / bmp.Height);
-
-            //if (flip) bmp.RotateFlip(RotateFlipType.Rotate180FlipX);
-            //g.DrawImage(bmp, 0, 0);
-
-            /*double newWidth = this.Width, newHeight = this.Height;
-            double angleRadians = Math.PI / 180.0;
-            if (angle < 90)
+            get { return _flipX; }
+            set
             {
-                angleRadians *= angle;
+                if (_baseImage != null)
+                {
+                    if (_flipX != value)
+                    {
+                        _baseImage.RotateFlip(RotateFlipType.RotateNoneFlipX);
+                        MakeDrawBmp();
+                        RefreshScene();
+                    }
+                    _flipX = value;
+                }
             }
-            else if(angle < 180)
-            {
-                angleRadians *= (180 - angle);
-            }
-            else if(angle < 270)
-            {
-                angleRadians *= (270 - angle);
-            }
-            else if(angle < 360)
-            {
-                angleRadians *= (360 - angle);
-            }
-            newWidth = this.Width * Math.Cos(angleRadians) + this.Height * Math.Sin(angleRadians);
-            newHeight = this.Width * Math.Sin(angleRadians) + this.Height * Math.Cos(angleRadians);
-            //this.Width = (int)newWidth;
-            //this.Height = (int)newHeight
-
-            //MessageBox.Show(newWidth + " " + newHeight);
-            if (drawBmp != null) drawBmp.Dispose();
-            drawBmp = new Bitmap((int)newWidth, (int)newHeight);
-            using (Graphics g = Graphics.FromImage(drawBmp))
-            {
-                g.TranslateTransform((float)newWidth / 2, (float)newHeight / 2);
-                g.RotateTransform(angle);
-                g.TranslateTransform((float)-newWidth / 2, (float)-newHeight / 2);
-                g.DrawImage(bmp, 0, 0);
-            }*/
         }
 
-        private void RefreshScene()
+        /// <summary>
+        /// Set a vertical flip.
+        /// </summary>
+        [
+            Category("Sprite"),
+            Description("When this property is true, make a vertical sprite image flip.")
+        ]
+        public bool FlipY
         {
-            if (this.Parent != null && this.Parent is ScenePanel)
+            get { return _flipY; }
+            set
             {
-                (this.Parent as ScenePanel).RefreshScene();
-                this.Parent.Refresh(); 
+                if (_baseImage != null)
+                {
+                    if (_flipY != value)
+                    {
+                        _baseImage.RotateFlip(RotateFlipType.RotateNoneFlipY);
+                        MakeDrawBmp();
+                        RefreshScene();
+                    }
+                    _flipY = value;
+                }
             }
         }
+
+        /// <summary>
+        /// Scale the sprite in the X direction.
+        /// </summary>
+        [
+            Category("Sprite"),
+            Description("The scale of sprite in the X direction.")
+        ]
+        public float ScaleX
+        {
+            get { return _scaleX; }
+            set
+            {
+                _scaleX = value;
+                if (_baseImage != null)
+                {
+                    MakeDrawBmp();
+                    RefreshScene();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Scale the sprite in the Y direction.
+        /// </summary>
+        [
+            Category("Sprite"),
+            Description("The scale of sprite in the Y direction.")
+        ]
+        public float ScaleY
+        {
+            get { return _scaleY; }
+            set
+            {
+                _scaleY = value;
+                if (_baseImage != null)
+                {
+                    MakeDrawBmp();
+                    RefreshScene();
+                }
+            }
+        }
+
+        #endregion Public Properties
+
+        #region Override Events
 
         protected override void OnResize(EventArgs e)
         {
-            base.OnResize(e);
-            if (bmp != null)
+            //base.OnResize(e);
+            if (_baseImage != null)
             {
                 MakeDrawBmp();
                 RefreshScene();
@@ -259,6 +273,11 @@ namespace Animation
             RefreshScene();
         }
 
+        protected override void OnPaintBackground(PaintEventArgs e)
+        {
+            base.OnPaintBackground(e);
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             //base.OnPaint(e);
@@ -267,11 +286,102 @@ namespace Animation
         protected override void OnLocationChanged(EventArgs e)
         {
             //base.OnLocationChanged(e);
-            if(drawBmp != null) {
-                bmpX = this.Left + (this.Width - drawBmp.Width) / 2;
-                bmpY = this.Top + (this.Height - drawBmp.Height) / 2;
+            if (_displayedImage != null)
+            {
+                displayedImageLeft = this.Left + (this.Width - _displayedImage.Width) / 2;
+                displayedImageTop = this.Top + (this.Height - _displayedImage.Height) / 2;
                 RefreshScene();
             }
         }
+
+        #endregion Override Events
+
+        #region Public Methods
+
+        /// <summary>
+        /// Determines if this sprite intersects with <paramref name="s"/>
+        /// </summary>
+        /// <returns>
+        /// This method returns true if there is any intersection, otherwise false.
+        /// </returns>
+        /// <param name="s">The sprite to test.</param>
+        public bool Intersect(Sprite s)
+        {
+            return Math.Max(displayedImageLeft, s.displayedImageLeft) <= Math.Min(displayedImageLeft + _displayedImage.Width,
+                                                                                  s.displayedImageLeft + s._displayedImage.Width) &&
+                Math.Max(displayedImageTop, s.displayedImageTop) <= Math.Min(displayedImageTop + _displayedImage.Height,
+                                                                             s.displayedImageTop + s._displayedImage.Height);
+        }
+
+        /// <summary>
+        /// Draw next image in ImageList on the sprite. 
+        /// If the end is reached - start from the beginning.
+        /// </summary>
+        public void NextImage()
+        {
+            if (_imageList != null && _imageList.Images.Count != 0)
+            {
+                _imageListIndex = (_imageListIndex + 1) % _imageList.Images.Count;
+                //bmp = new Bitmap(bmpList.Images[imgListIndex]);
+                //bmp.MakeTransparent(bmp.GetPixel(1, 1));
+                _baseImage = cache[_imageListIndex];
+                MakeDrawBmp();
+                RefreshScene();
+            }
+        }
+
+        #endregion Public Methods
+
+        #region Private Methods
+
+        /// <summary>
+        /// Apply all transofmations to the base image
+        /// and draw it to displayed image.
+        /// Sets new Top and Left coordinates if size of displayed image is changed.
+        /// </summary>
+        private void MakeDrawBmp()
+        {
+            int oldWidth = _baseImage.Width;
+            int oldHeight = _baseImage.Height;
+            double radian = _angle * Math.PI / 180;
+            double cos = Math.Abs(Math.Cos(radian));
+            double sin = Math.Abs(Math.Sin(radian));
+            float componentScaleX = (float)this.Width / _baseImage.Width;
+            float componentScaleY = (float)this.Height / _baseImage.Height;
+            int newWidth = (int)((oldWidth * cos + oldHeight * sin) * _scaleX * componentScaleX);
+            int newHeight = (int)((oldWidth * sin + oldHeight * cos) * _scaleY * componentScaleY);
+
+            if (_displayedImage != null)
+                _displayedImage.Dispose();
+            _displayedImage = new Bitmap(newWidth, newHeight);
+
+            using (Graphics g = Graphics.FromImage(_displayedImage))
+            {
+                g.TranslateTransform(newWidth / 2f, newHeight / 2f);
+                g.ScaleTransform(_scaleX * componentScaleX, _scaleY * componentScaleY);
+                g.RotateTransform(_angle);
+                g.TranslateTransform(-oldWidth / 2f, -oldHeight / 2f);
+
+                g.DrawImage(_baseImage, 0, 0);
+            }
+
+            displayedImageLeft = this.Left + (this.Width - newWidth) / 2;
+            displayedImageTop = this.Top + (this.Height - newHeight) / 2;
+        }
+
+        /// <summary>
+        /// Calls the <c>ScenePanel</c> RefreshScene method 
+        /// in which this sprite is placed to redraw entire scene
+        /// </summary>
+        private void RefreshScene()
+        {
+            if (this.Parent != null && this.Parent is ScenePanel)
+            {
+                (this.Parent as ScenePanel).RefreshScene();
+                this.Parent.Refresh();
+            }
+        }
+
+        #endregion Private Methods
     }
 }
